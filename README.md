@@ -42,3 +42,8 @@
             panic(err)
         }
     }
+
+
+### License
+
+    MIT License
