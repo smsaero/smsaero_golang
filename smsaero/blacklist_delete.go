@@ -1,17 +1,20 @@
 package smsaero_golang
 
-import "net/url"
+import (
+	"fmt"
+	"net/url"
+)
 
 type BlackListDeleteMsg struct {
 	Data interface{}
 	ErrorResponse
 }
 
-func (c *Client) BlackListDelete(id string) (bool, error) {
+func (c *Client) BlackListDelete(id int) (bool, error) {
 	response := new(BlackListDeleteMsg)
 
 	data := url.Values{}
-	data.Set("id", id)
+	data.Set("id", fmt.Sprintf("%d", id))
 
 	if err := c.executeRequest(`blacklist/delete`, response, data); err != nil {
 		return false, err

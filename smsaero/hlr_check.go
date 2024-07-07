@@ -1,6 +1,9 @@
 package smsaero_golang
 
-import "net/url"
+import (
+	"fmt"
+	"net/url"
+)
 
 type HlrCheck struct {
 	Id              int
@@ -14,12 +17,12 @@ type HlrCheckMsg struct {
 	ErrorResponse
 }
 
-func (c *Client) HlrCheck(number string) (HlrCheck, error) {
+func (c *Client) HlrCheck(number int) (HlrCheck, error) {
 	response := new(HlrCheckMsg)
 	empty := HlrCheck{}
 
 	data := url.Values{}
-	data.Set("number", number)
+	data.Set("number", fmt.Sprintf("%d", number))
 
 	if err := c.executeRequest(`hlr/check`, response, data); err != nil {
 		return empty, err

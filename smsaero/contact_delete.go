@@ -1,17 +1,20 @@
 package smsaero_golang
 
-import "net/url"
+import (
+	"fmt"
+	"net/url"
+)
 
 type ContactDeleteMsg struct {
 	Data interface{}
 	ErrorResponse
 }
 
-func (c *Client) ContactDelete(id string) (bool, error) {
+func (c *Client) ContactDelete(id int) (bool, error) {
 	response := new(ContactDeleteMsg)
 
 	data := url.Values{}
-	data.Set("id", id)
+	data.Set("id", fmt.Sprintf("%d", id))
 
 	if err := c.executeRequest(`contact/delete`, response, data); err != nil {
 		return false, err

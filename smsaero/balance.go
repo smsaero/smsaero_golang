@@ -1,7 +1,7 @@
 package smsaero_golang
 
 type Balance struct {
-	Balance float64 `json:"balance,float64,omitempty"`
+	Balance float64 `json:"balance,omitempty"`
 }
 
 type BalanceMsg struct {

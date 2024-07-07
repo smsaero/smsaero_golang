@@ -1,18 +1,21 @@
 package smsaero_golang
 
-import "net/url"
+import (
+	"fmt"
+	"net/url"
+)
 
 type HlrStatusMsg struct {
 	Data HlrCheck
 	ErrorResponse
 }
 
-func (c *Client) HlrStatus(id string) (HlrCheck, error) {
+func (c *Client) HlrStatus(id int) (HlrCheck, error) {
 	response := new(HlrStatusMsg)
 	empty := HlrCheck{}
 
 	data := url.Values{}
-	data.Set("id", id)
+	data.Set("id", fmt.Sprintf("%d", id))
 
 	if err := c.executeRequest(`hlr/status`, response, data); err != nil {
 		return empty, err
