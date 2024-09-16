@@ -8,7 +8,9 @@ type SmsListMsg struct {
 func (c *Client) SmsList() (interface{}, error) {
 	response := new(SmsListMsg)
 
-	if err := c.executeRequest(`sms/list`, response, nil); err != nil {
+	path := c.getApiPath("sms/list", "sms/testlist")
+
+	if err := c.executeRequest(path, response, nil); err != nil {
 		return nil, err
 	}
 

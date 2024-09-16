@@ -1,17 +1,20 @@
 package smsaero_golang
 
-import "net/url"
+import (
+	"fmt"
+	"net/url"
+)
 
 type GroupDeleteMsg struct {
 	Data interface{}
 	ErrorResponse
 }
 
-func (c *Client) GroupDelete(id string) (bool, error) {
+func (c *Client) GroupDelete(id int) (bool, error) {
 	response := new(GroupDeleteMsg)
 
 	data := url.Values{}
-	data.Set("id", id)
+	data.Set("id", fmt.Sprintf("%d", id))
 
 	if err := c.executeRequest(`group/delete`, response, data); err != nil {
 		return false, err

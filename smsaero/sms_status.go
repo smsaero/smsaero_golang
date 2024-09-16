@@ -1,6 +1,9 @@
 package smsaero_golang
 
-import "net/url"
+import (
+	"fmt"
+	"net/url"
+)
 
 type SmsStatus struct {
 	Id           int
@@ -21,14 +24,16 @@ type SmsStatusMsg struct {
 	ErrorResponse
 }
 
-func (c *Client) SmsStatus(id string) (SmsStatus, error) {
+func (c *Client) SmsStatus(id int) (SmsStatus, error) {
 	response := new(SmsStatusMsg)
 	empty := SmsStatus{}
 
 	data := url.Values{}
-	data.Set("id", id)
+	data.Set("id", fmt.Sprintf("%d", id))
 
-	if err := c.executeRequest(`sms/status`, response, data); err != nil {
+	path := c.getApiPath("sms/status", "sms/teststatus")
+
+	if err := c.executeRequest(path, response, data); err != nil {
 		return empty, err
 	}
 

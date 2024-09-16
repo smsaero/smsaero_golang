@@ -1,6 +1,9 @@
 package smsaero_golang
 
-import "net/url"
+import (
+	"fmt"
+	"net/url"
+)
 
 type NumberOperator struct {
 	Number         string
@@ -13,12 +16,12 @@ type NumberOperatorMsg struct {
 	ErrorResponse
 }
 
-func (c *Client) NumberOperator(number string) (NumberOperator, error) {
+func (c *Client) NumberOperator(number int) (NumberOperator, error) {
 	response := new(NumberOperatorMsg)
 	empty := NumberOperator{}
 
 	data := url.Values{}
-	data.Set("number", number)
+	data.Set("number", fmt.Sprintf("%d", number))
 
 	if err := c.executeRequest(`number/operator`, response, data); err != nil {
 		return empty, err

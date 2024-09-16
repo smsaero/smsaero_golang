@@ -1,0 +1,12 @@
+stages:
+  - test
+
+
+test:
+  image: golang:1.22
+  timeout: 5m
+  stage: test
+  before_script:
+    - make go_lint
+  script:
+    - make test

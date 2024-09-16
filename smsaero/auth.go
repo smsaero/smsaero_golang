@@ -5,7 +5,7 @@ type Auth struct {
 	ErrorResponse
 }
 
-func (c *Client) Auth() (bool, error) {
+func (c *Client) IsAuthorized() (bool, error) {
 	response := new(Auth)
 
 	if err := c.executeRequest(`auth`, response, nil); err != nil {
