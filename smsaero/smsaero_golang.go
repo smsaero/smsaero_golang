@@ -27,7 +27,7 @@ func (e ErrorResponse) IsErrorResponse() bool {
 
 func (e ErrorResponse) GetError() error {
 	if e.IsErrorResponse() {
-		return fmt.Errorf(e.Message)
+		return fmt.Errorf("%s", e.Message)
 	}
 	return nil
 }
@@ -147,7 +147,7 @@ func (c *Client) executeRequest(path string, destination WithErrorResponse, para
 			}
 			return err
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		c.log("Received response from %s", fullURL)
 		if err := json.NewDecoder(resp.Body).Decode(destination); err != nil {

@@ -1,6 +1,6 @@
-# SmsAero GoLang Api client
+# GoLang library for sending SMS messages via SMS Aero API
 
-Library for sending SMS messages using the SmsAero API. Written in GoLang.
+Library for sending SMS messages using the SMS Aero API. Written in GoLang.
 
 ## Installation:
 
@@ -41,8 +41,18 @@ func main() {
         smsaero_golang.WithPhoneValidation(false),
     )
 
+    // Sms send
     if sendResult, err := client.SendSms(70000000000, "Hello, World!"); err == nil {
         fmt.Println(sendResult.Id)
+    } else {
+        panic(err)
+    }
+
+    // Telegram code send
+    if telegramResult, err := client.SendTelegram(70000000000, 1234, 
+        smsaero_golang.WithSendTelegramSign("SMS Aero"),
+        smsaero_golang.WithSendTelegramText("Ваш код: 1234")); err == nil {
+        fmt.Printf("Telegram ID: %d, Status: %s\n", telegramResult.Id, telegramResult.ExtendStatus)
     } else {
         panic(err)
     }
