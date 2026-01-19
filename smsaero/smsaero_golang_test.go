@@ -1,8 +1,8 @@
 package smsaero_golang
 
 import (
+	"context"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -11,73 +11,244 @@ import (
 	"time"
 )
 
+// testLogger - тестовый логгер для проверки функциональности логирования
+// Реализует интерфейс Logger, но не выводит сообщения (пустая реализация)
 type testLogger struct{}
 
 func (l *testLogger) Printf(format string, v ...interface{}) {}
 
+// TestNewSmsAeroClient - тест создания клиента SMS Aero с базовыми параметрами
+// Проверяет:
+// 1. Успешное создание клиента с валидными учетными данными
+// 2. Корректное сохранение имени пользователя и пароля
+// 3. Отсутствие ошибок при создании
 func TestNewSmsAeroClient(t *testing.T) {
-	client := NewSmsAeroClient("username", "password")
-	if client.username != "username" || client.password != "password" {
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+		return
+	}
+	if client.username != "username" || client.password != "test-api-key-32-chars-long" {
 		t.Errorf("NewSmsAeroClient() failed to set username or password correctly")
 	}
 }
 
+// TestNewSmsAeroClientWithHTTPClient - тест создания клиента с пользовательским HTTP-клиентом
+// Проверяет:
+// 1. Успешное создание клиента с опцией WithHTTPClient
+// 2. Корректную установку пользовательского HTTP-клиента
+// 3. Сохранение настроек таймаута в пользовательском клиенте
 func TestNewSmsAeroClientWithHTTPClient(t *testing.T) {
 	customClient := &http.Client{Timeout: 2 * time.Second}
-	client := NewSmsAeroClient("username", "password", WithHTTPClient(customClient))
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithHTTPClient(customClient))
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
 	if client.client != customClient {
 		t.Errorf("WithHTTPClient() failed to set custom HTTP client")
 	}
 }
 
-func TestNewSmsAeroClientWithContext(t *testing.T) {
-	ctx := http.DefaultClient.Timeout
-	client := NewSmsAeroClient("username", "password", WithTimeout(ctx))
-	if client.client.Timeout != ctx {
-		t.Errorf("WithContext() failed to set custom context")
-	}
-}
-
+// TestNewSmsAeroClientWithTimeout - тест создания клиента с пользовательским таймаутом
+// Проверяет:
+// 1. Успешное создание клиента с опцией WithTimeout
+// 2. Корректную установку пользовательского таймаута
+// 3. Сохранение настроек таймаута в HTTP-клиенте
 func TestNewSmsAeroClientWithTimeout(t *testing.T) {
 	timeout := 5 * time.Second
-	client := NewSmsAeroClient("username", "password", WithTimeout(timeout))
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithTimeout(timeout))
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
 	if client.client.Timeout != timeout {
 		t.Errorf("WithTimeout() failed to set custom timeout")
 	}
 }
 
+// TestNewSmsAeroClientWithPhoneValidation - тест создания клиента с отключенной валидацией телефонов
+// Проверяет:
+// 1. Успешное создание клиента с опцией WithPhoneValidation(false)
+// 2. Корректное отключение валидации номеров телефонов
+// 3. Сохранение настройки phoneValidation = false
 func TestNewSmsAeroClientWithPhoneValidation(t *testing.T) {
-	client := NewSmsAeroClient("username", "password", WithPhoneValidation(false))
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithPhoneValidation(false))
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
 	if client.phoneValidation != false {
 		t.Errorf("WithPhoneValidation() failed to disable phone validation")
 	}
 }
 
+// TestNewSmsAeroClientWithTest - тест создания клиента в тестовом режиме
+// Проверяет:
+// 1. Успешное создание клиента с опцией WithTest(true)
+// 2. Корректное включение тестового режима
+// 3. Сохранение настройки testMode = true
 func TestNewSmsAeroClientWithTest(t *testing.T) {
-	client := NewSmsAeroClient("username", "password", WithTest(true))
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithTest(true))
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
 	if client.testMode != true {
 		t.Errorf("WithTest() failed to enable test mode")
 	}
 }
 
+// TestNewSmsAeroClientWithSign - тест создания клиента с пользовательской подписью
+// Проверяет:
+// 1. Успешное создание клиента с опцией WithSign
+// 2. Корректную установку пользовательской подписи
+// 3. Сохранение настройки sign в клиенте
 func TestNewSmsAeroClientWithSign(t *testing.T) {
 	sign := "Custom Sign"
-	client := NewSmsAeroClient("username", "password", WithSign(sign))
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithSign(sign))
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
 	if client.sign != sign {
 		t.Errorf("WithSign() failed to set custom sign")
 	}
 }
 
+// TestNewSmsAeroClientWithLogger - тест создания клиента с пользовательским логгером
+// Проверяет:
+// 1. Успешное создание клиента с опцией WithLogger
+// 2. Корректную установку пользовательского логгера
+// 3. Сохранение ссылки на логгер в клиенте
 func TestNewSmsAeroClientWithLogger(t *testing.T) {
 	logger := &testLogger{}
-	client := NewSmsAeroClient("username", "password", WithLogger(logger))
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithLogger(logger))
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
 	if client.logger != logger {
 		t.Errorf("WithLogger() failed to set custom logger")
 	}
 }
 
+// TestNewSmsAeroClientWithContext - тест создания клиента с пользовательским контекстом
+// Проверяет:
+// 1. Успешное создание клиента с опцией WithContext
+// 2. Корректную установку пользовательского контекста
+// 3. Сохранение переданного контекста в клиенте
+func TestNewSmsAeroClientWithContext(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithContext(ctx))
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
+	if client.ctx != ctx {
+		t.Errorf("WithContext() failed to set custom context")
+	}
+}
+
+// TestNewSmsAeroClientWithContextCancellation - тест отмены контекста во время выполнения запроса
+// Проверяет:
+// 1. Создание клиента с контекстом, который будет отменён
+// 2. Запуск HTTP-запроса к медленному серверу
+// 3. Отмену контекста во время выполнения запроса
+// 4. Корректное прерывание операции с ошибкой context canceled
+func TestNewSmsAeroClientWithContextCancellation(t *testing.T) {
+	// Создаём сервер с задержкой ответа
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Эмулируем медленный ответ сервера
+		time.Sleep(2 * time.Second)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"success":true}`))
+	}))
+	defer server.Close()
+
+	// Создаём контекст с возможностью отмены
+	ctx, cancel := context.WithCancel(context.Background())
+
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithContext(ctx))
+	if err != nil {
+		t.Fatalf("NewSmsAeroClient() failed: %v", err)
+	}
+	client.SetHTTPProtocol("http")
+	client.SetGateUrls([]string{strings.TrimPrefix(server.URL, "http://")})
+
+	// Канал для получения результата запроса
+	errChan := make(chan error, 1)
+
+	// Запускаем запрос в отдельной горутине
+	go func() {
+		var resp ErrorResponse
+		errChan <- client.executeRequest("/slow", &resp, nil)
+	}()
+
+	// Даём запросу начаться, затем отменяем контекст
+	time.Sleep(100 * time.Millisecond)
+	cancel()
+
+	// Ожидаем результат
+	select {
+	case err := <-errChan:
+		if err == nil {
+			t.Error("Expected error due to context cancellation, got nil")
+		} else if !strings.Contains(err.Error(), "context canceled") &&
+			!strings.Contains(err.Error(), "canceled") {
+			t.Errorf("Expected context canceled error, got: %v", err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Error("Request did not complete in time after context cancellation")
+	}
+}
+
+// TestNewSmsAeroClientWithContextTimeout - тест таймаута контекста во время выполнения запроса
+// Проверяет:
+// 1. Создание клиента с контекстом с коротким таймаутом
+// 2. Запуск HTTP-запроса к медленному серверу
+// 3. Автоматическое прерывание операции по истечении таймаута контекста
+// 4. Корректную обработку ошибки context deadline exceeded
+func TestNewSmsAeroClientWithContextTimeout(t *testing.T) {
+	// Создаём сервер с задержкой ответа
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Эмулируем медленный ответ сервера (дольше чем таймаут контекста)
+		time.Sleep(2 * time.Second)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"success":true}`))
+	}))
+	defer server.Close()
+
+	// Создаём контекст с коротким таймаутом
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithContext(ctx))
+	if err != nil {
+		t.Fatalf("NewSmsAeroClient() failed: %v", err)
+	}
+	client.SetHTTPProtocol("http")
+	client.SetGateUrls([]string{strings.TrimPrefix(server.URL, "http://")})
+
+	var resp ErrorResponse
+	err = client.executeRequest("/slow", &resp, nil)
+
+	if err == nil {
+		t.Error("Expected error due to context timeout, got nil")
+	} else if !strings.Contains(err.Error(), "deadline exceeded") &&
+		!strings.Contains(err.Error(), "context deadline exceeded") &&
+		!strings.Contains(err.Error(), "timeout") {
+		t.Errorf("Expected context deadline exceeded error, got: %v", err)
+	}
+}
+
+// TestNewSmsAeroClientDefaultValues - тест проверки значений по умолчанию при создании клиента
+// Проверяет:
+// 1. Валидация телефонов включена по умолчанию (phoneValidation = true)
+// 2. Тестовый режим отключен по умолчанию (testMode = false)
+// 3. Подпись по умолчанию "Sms Aero"
+// 4. HTTP-клиент по умолчанию http.DefaultClient
+// 5. Контекст не nil (создается context.Background())
 func TestNewSmsAeroClientDefaultValues(t *testing.T) {
-	client := NewSmsAeroClient("username", "password")
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
 	if client.phoneValidation != true {
 		t.Errorf("Default phoneValidation expected to be true")
 	}
@@ -95,53 +266,79 @@ func TestNewSmsAeroClientDefaultValues(t *testing.T) {
 	}
 }
 
+// TestClient_getApiPath_TestModeEnabled - тест метода getAPIPath в тестовом режиме
+// Проверяет:
+// 1. При включенном тестовом режиме (testMode = true) возвращается тестовый путь
+// 2. Корректное переключение между обычным и тестовым API
+// 3. Правильную работу метода getAPIPath с параметрами (normalPath, testPath)
 func TestClient_getApiPath_TestModeEnabled(t *testing.T) {
-	client := NewSmsAeroClient("username", "password", WithTest(true))
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithTest(true))
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
 	testPath := "sms/testsend"
 	normalPath := "sms/send"
 	expectedPath := testPath
 
-	if path := client.getApiPath(normalPath, testPath); path != expectedPath {
+	if path := client.getAPIPath(normalPath, testPath); path != expectedPath {
 		t.Errorf("getApiPath() with testMode enabled = %v, want %v", path, expectedPath)
 	}
 }
 
+// TestClient_getApiPath_TestModeDisabled - тест метода getAPIPath в обычном режиме
+// Проверяет:
+// 1. При отключенном тестовом режиме (testMode = false) возвращается обычный путь
+// 2. Корректное переключение между обычным и тестовым API
+// 3. Правильную работу метода getAPIPath с параметрами (normalPath, testPath)
 func TestClient_getApiPath_TestModeDisabled(t *testing.T) {
-	client := NewSmsAeroClient("username", "password") // testMode is false by default
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long") // testMode is false by default
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
 	testPath := "sms/testsend"
 	normalPath := "sms/send"
 	expectedPath := normalPath
 
-	if path := client.getApiPath(normalPath, testPath); path != expectedPath {
+	if path := client.getAPIPath(normalPath, testPath); path != expectedPath {
 		t.Errorf("getApiPath() with testMode disabled = %v, want %v", path, expectedPath)
 	}
 }
 
-// Mock HTTP server to simulate responses for different scenarios
+// setupMockServer - создает mock HTTP сервер для тестирования различных сценариев
+// Возвращает тестовый сервер с двумя эндпоинтами:
+// - /success - возвращает успешный ответ {"success":true}
+// - /fail - возвращает ошибку 500 с сообщением об ошибке
 func setupMockServer() *httptest.Server {
 	handler := http.NewServeMux()
-	handler.HandleFunc("/v2/success", func(w http.ResponseWriter, r *http.Request) {
+	handler.HandleFunc("/success", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"success":true}`))
 	})
-	handler.HandleFunc("/v2/fail", func(w http.ResponseWriter, r *http.Request) {
+	handler.HandleFunc("/fail", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(`{"success":false, "message":"Internal Server Error"}`))
 	})
 	return httptest.NewServer(handler)
 }
 
+// TestExecuteRequestDefaultValues - тест выполнения HTTP-запроса с настройками по умолчанию
+// Проверяет:
+// 1. Успешное выполнение HTTP-запроса к mock-серверу
+// 2. Корректную обработку успешного ответа от сервера
+// 3. Правильную работу метода executeRequest с базовыми настройками
+// 4. Установку HTTP-протокола и URL шлюзов
 func TestExecuteRequestDefaultValues(t *testing.T) {
 	server := setupMockServer()
 	defer server.Close()
 
-	GateUrls = []string{strings.TrimPrefix(server.URL, "http://")}
-	fmt.Println(server.URL)
-
-	client := NewSmsAeroClient("username", "password")
-	client.httpProtocol = "http"
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
+	client.SetHTTPProtocol("http")
+	client.SetGateUrls([]string{strings.TrimPrefix(server.URL, "http://")})
 	var resp ErrorResponse
-	err := client.executeRequest("/v2/success", &resp, nil)
+	err = client.executeRequest("/success", &resp, nil)
 	if err != nil {
 		t.Errorf("executeRequest() error = %v, wantErr %v", err, false)
 	}
@@ -150,15 +347,24 @@ func TestExecuteRequestDefaultValues(t *testing.T) {
 	}
 }
 
+// TestExecuteRequestURLSwitch - тест переключения между URL шлюзов при недоступности первого
+// Проверяет:
+// 1. Переключение на следующий URL при недоступности первого шлюза
+// 2. Успешное выполнение запроса на втором доступном шлюзе
+// 3. Корректную обработку ошибок подключения к первому шлюзу
+// 4. Работу механизма fallback между шлюзами
 func TestExecuteRequestURLSwitch(t *testing.T) {
 	server := setupMockServer()
 	defer server.Close()
 	GateUrls = []string{"http://invalid.url", strings.TrimPrefix(server.URL, "http://")}
 
-	client := NewSmsAeroClient("username", "password", WithTimeout(1*time.Second))
-	client.httpProtocol = "http"
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long", WithTimeout(1*time.Second))
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
+	client.SetHTTPProtocol("http")
 	var resp ErrorResponse
-	err := client.executeRequest("/v2/success", &resp, nil)
+	err = client.executeRequest("/success", &resp, nil)
 	if err != nil {
 		t.Errorf("executeRequest() should not fail when switching URLs, got error: %v", err)
 	}
@@ -167,6 +373,12 @@ func TestExecuteRequestURLSwitch(t *testing.T) {
 	}
 }
 
+// TestExecuteRequestHeaders - тест проверки HTTP-заголовков в запросах
+// Проверяет:
+// 1. Корректную установку заголовка Content-Type: application/x-www-form-urlencoded
+// 2. Правильную установку заголовка User-Agent: SAGoClient/2.0.0
+// 3. Отправку всех необходимых заголовков в HTTP-запросах
+// 4. Соответствие заголовков стандартам API SMS Aero
 func TestExecuteRequestHeaders(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != "application/x-www-form-urlencoded" {
@@ -178,45 +390,64 @@ func TestExecuteRequestHeaders(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
-	GateUrls = []string{strings.TrimPrefix(server.URL, "http://")}
-
-	client := NewSmsAeroClient("username", "password")
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
+	client.SetGateUrls([]string{strings.TrimPrefix(server.URL, "http://")})
 	var resp ErrorResponse
 	_ = client.executeRequest("", &resp, nil)
 }
 
+// TestExecuteRequestWithParams - тест выполнения HTTP-запроса с параметрами
+// Проверяет:
+// 1. Успешное выполнение запроса с дополнительными параметрами
+// 2. Корректную передачу параметров в HTTP-запросе
+// 3. Правильную работу метода executeRequest с параметрами
+// 4. Обработку URL-encoded параметров
 func TestExecuteRequestWithParams(t *testing.T) {
 	server := setupMockServer()
 	defer server.Close()
-	GateUrls = []string{strings.TrimPrefix(server.URL, "http://")}
-
-	client := NewSmsAeroClient("username", "password")
-	client.httpProtocol = "http"
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
+	client.SetHTTPProtocol("http")
+	client.SetGateUrls([]string{strings.TrimPrefix(server.URL, "http://")})
 
 	params := url.Values{}
 	params.Add("test", "value")
 	var resp ErrorResponse
-	err := client.executeRequest("/v2/success", &resp, nil)
+	err = client.executeRequest("/success", &resp, nil)
 	if err != nil {
 		t.Errorf("executeRequest() with params error = %v, wantErr %v", err, false)
 	}
 }
 
+// TestExecuteRequestBasicAuth - тест базовой HTTP-аутентификации
+// Проверяет:
+// 1. Корректную установку заголовка Authorization с Basic Auth
+// 2. Правильное кодирование учетных данных в base64
+// 3. Формат заголовка: "Basic base64(username:password)"
+// 4. Передачу учетных данных в каждом HTTP-запросе
 func TestExecuteRequestBasicAuth(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
 			t.Fatal("Authorization header not found")
 		}
-		expectedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("username:password"))
+		expectedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("username:test-api-key-32-chars-long"))
 		if auth != expectedAuth {
 			t.Errorf("Authorization header = %v, want %v", auth, expectedAuth)
 		}
 	}))
 	defer server.Close()
 
-	GateUrls = []string{strings.TrimPrefix(server.URL, "http://")}
-	client := NewSmsAeroClient("username", "password")
-	client.httpProtocol = "http"
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Errorf("NewSmsAeroClient() failed: %v", err)
+	}
+	client.SetHTTPProtocol("http")
+	client.SetGateUrls([]string{strings.TrimPrefix(server.URL, "http://")})
 	_ = client.executeRequest("", &ErrorResponse{}, nil)
 }

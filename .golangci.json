@@ -1,0 +1,203 @@
+{
+    "formatters": {
+        "enable": [
+            "gci",
+            "gofmt",
+            "goimports"
+        ],
+        "exclusions": {
+            "generated": "lax",
+            "paths": [
+                "third_party$",
+                "builtin$",
+                "examples$"
+            ]
+        },
+        "settings": {
+            "gci": {
+                "sections": [
+                    "standard",
+                    "default",
+                    "prefix(template/)"
+                ]
+            },
+            "goimports": {
+                "local-prefixes": [
+                    "template/"
+                ]
+            }
+        }
+    },
+    "linters": {
+        "default": "none",
+        "enable": [
+            "asasalint",
+            "asciicheck",
+            "bidichk",
+            "bodyclose",
+            "canonicalheader",
+            "contextcheck",
+            "cyclop",
+            "decorder",
+            "dogsled",
+            "dupl",
+            "dupword",
+            "durationcheck",
+            "err113",
+            "errcheck",
+            "errchkjson",
+            "errname",
+            "errorlint",
+            "exhaustive",
+            "fatcontext",
+            "forcetypeassert",
+            "funlen",
+            "ginkgolinter",
+            "gocheckcompilerdirectives",
+            "gochecksumtype",
+            "gocognit",
+            "goconst",
+            "gocritic",
+            "gocyclo",
+            "godox",
+            "goheader",
+            "gomoddirectives",
+            "gomodguard",
+            "goprintffuncname",
+            "gosec",
+            "gosmopolitan",
+            "govet",
+            "grouper",
+            "importas",
+            "inamedparam",
+            "ineffassign",
+            "interfacebloat",
+            "ireturn",
+            "lll",
+            "maintidx",
+            "mirror",
+            "misspell",
+            "mnd",
+            "nakedret",
+            "nestif",
+            "nilerr",
+            "nilnil",
+            "nlreturn",
+            "noctx",
+            "nolintlint",
+            "nonamedreturns",
+            "nosprintfhostport",
+            "paralleltest",
+            "perfsprint",
+            "prealloc",
+            "predeclared",
+            "promlinter",
+            "protogetter",
+            "reassign",
+            "revive",
+            "rowserrcheck",
+            "sloglint",
+            "staticcheck",
+            "tagalign",
+            "tagliatelle",
+            "testableexamples",
+            "testifylint",
+            "testpackage",
+            "thelper",
+            "tparallel",
+            "unconvert",
+            "unparam",
+            "unused",
+            "usestdlibvars",
+            "varnamelen",
+            "wastedassign",
+            "whitespace",
+            "wrapcheck"
+        ],
+        "exclusions": {
+            "generated": "lax",
+            "paths": [
+                "third_party$",
+                "builtin$",
+                "examples$",
+                "demo",
+                ".*_test.go$"
+            ],
+            "linters": [
+                "containedctx",
+                "revive"
+            ],
+            "presets": [
+                "comments",
+                "common-false-positives",
+                "legacy",
+                "std-error-handling"
+            ],
+            "rules": [
+                {
+                    "linters": [
+                        "lll"
+                    ],
+                    "source": "^\t*// "
+                },
+                {
+                    "linters": [
+                        "contextcheck"
+                    ],
+                    "path": "_test\\.go"
+                }
+            ]
+        },
+        "settings": {
+            "revive": {
+                "rules": [
+                    {
+                        "name": "var-naming",
+                        "disabled": true
+                    }
+                ]
+            },
+            "containedctx": {
+                "ignore-return-value": true
+            },
+            "errcheck": {
+                "check-type-assertions": true
+            },
+            "exhaustive": {
+                "default-signifies-exhaustive": true
+            },
+            "govet": {
+                "enable": [
+                    "shadow"
+                ]
+            },
+            "inamedparam": {
+                "skip-single-param": true
+            },
+            "makezero": {
+                "always": true
+            },
+            "misspell": {
+                "ignore-rules": [
+                    "konf",
+                    "statuser"
+                ],
+                "locale": "US"
+            },
+            "nonamedreturns": {
+                "report-error-in-defer": true
+            },
+            "paralleltest": {
+                "ignore-missing": true
+            },
+            "cyclop": {
+                "max-complexity": 25
+            },
+            "funlen": {
+                "lines": 80,
+                "statements": 80
+            }
+        }
+    },
+    "version": "2"
+}
