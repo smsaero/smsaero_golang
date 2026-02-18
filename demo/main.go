@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	smsaero_golang "github.com/smsaero/smsaero_golang/smsaero"
+	smsaero_golang "github.com/smsaero/smsaero_golang/v2/smsaero"
 )
 
 func main() {
@@ -48,7 +48,7 @@ func main() {
 		logger = log.New(io.Discard, "", 0)
 	}
 
-	client := smsaero_golang.NewSmsAeroClient(
+	client, err := smsaero_golang.NewSmsAeroClient(
 		*email,
 		*apiKey,
 		smsaero_golang.WithHTTPClient(httpClient),
@@ -59,6 +59,10 @@ func main() {
 		smsaero_golang.WithTest(*testMode),
 		smsaero_golang.WithSign(*sign),
 	)
+	if err != nil {
+		fmt.Printf("Error creating client: %v\n", err)
+		os.Exit(1)
+	}
 
 	if auth, err := client.IsAuthorized(); err != nil {
 		fmt.Printf("An error occurred: %v\n", err)
@@ -84,11 +88,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Message sent successfully: %d\n", send.Id)
+	fmt.Printf("Message sent successfully: %d\n", send.ID)
 
 	time.Sleep(time.Second * 3)
 
-	status, err := client.SmsStatus(send.Id)
+	status, err := client.SmsStatus(send.ID)
 	if err != nil {
 		fmt.Printf("An error occurred: %v\n", err)
 		os.Exit(1)

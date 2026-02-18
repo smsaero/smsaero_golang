@@ -1,12 +1,44 @@
+variables:
+  RELEASE_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+
+
 stages:
   - test
+  - build
 
 
 test:
-  image: golang:1.22
+  image: golang:1.25
   timeout: 5m
   stage: test
   before_script:
-    - make go_lint
+    - go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
   script:
+    - make go_lint
     - make test
+
+
+build:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker image prune -f
+  script:
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+        tag=""
+        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = 'latest'"
+      else
+        tag=":$CI_COMMIT_REF_SLUG"
+        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+      fi
+    - docker build --pull -t "$CI_REGISTRY_IMAGE${tag}" -t "$RELEASE_IMAGE" .
+    - docker push "$CI_REGISTRY_IMAGE${tag}"
+    - docker push "$RELEASE_IMAGE"
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      exists:
+        - Dockerfile

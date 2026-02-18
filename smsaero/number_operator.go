@@ -1,18 +1,18 @@
 package smsaero_golang
 
 import (
-	"fmt"
 	"net/url"
+	"strconv"
 )
 
 type NumberOperator struct {
-	Number         string
-	Operator       int
-	ExtendOperator string
+	Number         string `json:"number"`
+	Operator       int    `json:"operator"`
+	ExtendOperator string `json:"extendOperator"`
 }
 
 type NumberOperatorMsg struct {
-	Data NumberOperator
+	Data NumberOperator `json:"data"`
 	ErrorResponse
 }
 
@@ -21,7 +21,7 @@ func (c *Client) NumberOperator(number int) (NumberOperator, error) {
 	empty := NumberOperator{}
 
 	data := url.Values{}
-	data.Set("number", fmt.Sprintf("%d", number))
+	data.Set("number", strconv.Itoa(number))
 
 	if err := c.executeRequest(`number/operator`, response, data); err != nil {
 		return empty, err
