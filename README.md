@@ -19,13 +19,8 @@ A Go library for working with the SMS Aero API service.
 ## Installation
 
 ```bash
-go get github.com/smsaero/smsaero_golang/v2
-```
-
-If you are starting from scratch in a new directory, you will first need to create a `go.mod` file for tracking dependencies:
-
-```bash
 go mod init smsaero-example
+go get github.com/smsaero/smsaero_golang/v2/smsaero@latest
 ```
 
 ## Quick Start

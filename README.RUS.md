@@ -19,13 +19,8 @@
 ## Установка
 
 ```bash
-go get github.com/smsaero/smsaero_golang/v2
-```
-
-Если вы начинаете с нуля в новой директории, сначала необходимо создать файл `go.mod` для отслеживания зависимостей:
-
-```bash
 go mod init smsaero-example
+go get github.com/smsaero/smsaero_golang/v2/smsaero@latest
 ```
 
 ## Пример использования
