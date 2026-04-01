@@ -451,3 +451,151 @@ func TestExecuteRequestBasicAuth(t *testing.T) {
 	client.SetGateUrls([]string{strings.TrimPrefix(server.URL, "http://")})
 	_ = client.executeRequest("", &ErrorResponse{}, nil)
 }
+
+func setupMobileIdMockServer() *httptest.Server {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/mobile-id/send", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"success":true,"data":{"id":273,"number":"79031234567","authType":"SIM-PUSH","codeSms":"","status":0,"cost":0,"dateCreate":1719119523,"dateSend":1719119523}}`))
+	})
+	handler.HandleFunc("/mobile-id/status", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"success":true,"data":{"id":273,"number":"79031234567","authType":"SMS","codeSms":"","status":3,"cost":0,"dateCreate":1719119523,"dateSend":1719119523}}`))
+	})
+	handler.HandleFunc("/mobile-id/verify", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"success":true,"data":{"id":273,"number":"79031234567","authType":"SMS","codeSms":"1234","status":3,"cost":0,"dateCreate":1719119523,"dateSend":1719119523}}`))
+	})
+	return httptest.NewServer(handler)
+}
+
+func TestSendMobileId(t *testing.T) {
+	server := setupMobileIdMockServer()
+	defer server.Close()
+
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Fatalf("NewSmsAeroClient() failed: %v", err)
+	}
+	client.SetHTTPProtocol("http")
+	client.SetGateUrls([]string{strings.TrimPrefix(server.URL, "http://")})
+
+	result, err := client.SendMobileId(79031234567, "SMSAero", "https://example.com/callback")
+	if err != nil {
+		t.Fatalf("SendMobileId() error = %v", err)
+	}
+	if result.ID != 273 {
+		t.Errorf("SendMobileId() ID = %v, want 273", result.ID)
+	}
+	if result.AuthType != "SIM-PUSH" {
+		t.Errorf("SendMobileId() AuthType = %v, want SIM-PUSH", result.AuthType)
+	}
+	if result.Status != 0 {
+		t.Errorf("SendMobileId() Status = %v, want 0", result.Status)
+	}
+}
+
+func TestSendMobileIdInvalidPhone(t *testing.T) {
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Fatalf("NewSmsAeroClient() failed: %v", err)
+	}
+	_, err = client.SendMobileId(123, "SMSAero", "https://example.com/callback")
+	if err == nil {
+		t.Error("SendMobileId() expected error for invalid phone")
+	}
+}
+
+func TestSendMobileIdInvalidCallbackUrl(t *testing.T) {
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Fatalf("NewSmsAeroClient() failed: %v", err)
+	}
+	_, err = client.SendMobileId(79031234567, "SMSAero", "ftp://bad")
+	if err == nil {
+		t.Error("SendMobileId() expected error for invalid callback URL")
+	}
+}
+
+func TestMobileIdStatus(t *testing.T) {
+	server := setupMobileIdMockServer()
+	defer server.Close()
+
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Fatalf("NewSmsAeroClient() failed: %v", err)
+	}
+	client.SetHTTPProtocol("http")
+	client.SetGateUrls([]string{strings.TrimPrefix(server.URL, "http://")})
+
+	result, err := client.MobileIdStatus(273)
+	if err != nil {
+		t.Fatalf("MobileIdStatus() error = %v", err)
+	}
+	if result.ID != 273 {
+		t.Errorf("MobileIdStatus() ID = %v, want 273", result.ID)
+	}
+	if result.Status != 3 {
+		t.Errorf("MobileIdStatus() Status = %v, want 3", result.Status)
+	}
+}
+
+func TestMobileIdStatusInvalidID(t *testing.T) {
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Fatalf("NewSmsAeroClient() failed: %v", err)
+	}
+	_, err = client.MobileIdStatus(0)
+	if err == nil {
+		t.Error("MobileIdStatus() expected error for zero ID")
+	}
+	_, err = client.MobileIdStatus(-1)
+	if err == nil {
+		t.Error("MobileIdStatus() expected error for negative ID")
+	}
+}
+
+func TestVerifyMobileId(t *testing.T) {
+	server := setupMobileIdMockServer()
+	defer server.Close()
+
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Fatalf("NewSmsAeroClient() failed: %v", err)
+	}
+	client.SetHTTPProtocol("http")
+	client.SetGateUrls([]string{strings.TrimPrefix(server.URL, "http://")})
+
+	result, err := client.VerifyMobileId(273, "1234", "SMSAero")
+	if err != nil {
+		t.Fatalf("VerifyMobileId() error = %v", err)
+	}
+	if result.ID != 273 {
+		t.Errorf("VerifyMobileId() ID = %v, want 273", result.ID)
+	}
+	if result.CodeSms != "1234" {
+		t.Errorf("VerifyMobileId() CodeSms = %v, want 1234", result.CodeSms)
+	}
+}
+
+func TestVerifyMobileIdInvalidID(t *testing.T) {
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Fatalf("NewSmsAeroClient() failed: %v", err)
+	}
+	_, err = client.VerifyMobileId(0, "1234", "SMSAero")
+	if err == nil {
+		t.Error("VerifyMobileId() expected error for zero ID")
+	}
+}
+
+func TestVerifyMobileIdEmptyCode(t *testing.T) {
+	client, err := NewSmsAeroClient("username", "test-api-key-32-chars-long")
+	if err != nil {
+		t.Fatalf("NewSmsAeroClient() failed: %v", err)
+	}
+	_, err = client.VerifyMobileId(273, "", "SMSAero")
+	if err == nil {
+		t.Error("VerifyMobileId() expected error for empty code")
+	}
+}
